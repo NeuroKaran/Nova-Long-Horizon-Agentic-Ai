@@ -684,8 +684,8 @@ class AgentLoop:
 # ============================================================================
 
 app = typer.Typer(
-    name="gemini-code",
-    help="Gemini Code - AI-powered coding assistant",
+    name="klix-code",
+    help="Klix code - AI-powered coding assistant",
     add_completion=False,
 )
 
@@ -712,7 +712,7 @@ def main(
     ),
 ) -> None:
     """
-    Start Gemini Code - an AI-powered coding assistant.
+    Start Klix code - an AI-powered coding assistant.
     
     Uses Google Gemini by default, or Ollama with --local flag.
     """

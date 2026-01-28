@@ -1,6 +1,6 @@
-# Gemini Code
+# Klix code
 
-A sophisticated TUI-based AI Agent that replicates the "Claude Code" interface, powered by Google Gemini and Ollama.
+A sophisticated TUI-based AI Agent that replicates the "Claude Code" interface, powered by Google Gemini and Ollama, with advanced long-term memory.
 
 ![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
 ![Rich](https://img.shields.io/badge/TUI-rich-orange.svg)
@@ -9,8 +9,9 @@ A sophisticated TUI-based AI Agent that replicates the "Claude Code" interface, 
 
 - 🎨 **Beautiful TUI** - Dark mode interface with Tangerine Orange accents
 - 🧠 **Hybrid Brain** - Google Gemini (cloud) + Ollama (local) support
-- 🔧 **Built-in Tools** - File operations, shell commands, web search
-- 💬 **Slash Commands** - `/init`, `/config`, `/model`, `/clear`, `/help`
+- 🧠 **Persistent Memory** - Powered by Mem0 for long-term recall of user preferences and project context
+- 🔧 **Built-in Tools** - File operations, shell commands, web search, and project analysis
+- 💬 **Slash Commands** - `/init`, `/config`, `/model`, `/clear`, `/help`, `/memory`, `/forget`, `/remember`
 - 📝 **Markdown Support** - Syntax-highlighted code and rich formatting
 - 🔄 **Streaming** - Real-time response streaming
 
@@ -22,10 +23,10 @@ A sophisticated TUI-based AI Agent that replicates the "Claude Code" interface, 
    pip install -r requirements.txt
    ```
 
-2. **Configure API key:**
+2. **Configure API keys:**
    ```bash
    cp .env.example .env
-   # Edit .env and add your GOOGLE_API_KEY
+   # Edit .env and add your GOOGLE_API_KEY and MEM0_API_KEY
    ```
 
 3. **Run:**
@@ -56,14 +57,16 @@ python main.py --project ./my-project
 | Command | Description |
 |---------|-------------|
 | `/init [path]` | Initialize project context |
-| `/config` | View current configuration |
-| `/config KEY=VALUE` | Update configuration |
-| `/model [name]` | Switch between models |
+| `/config` | View or change configuration |
+| `/model [name]` | Switch between models (gemini/ollama) |
 | `/clear` | Clear conversation context |
 | `/tools` | Show available tools |
 | `/status` | Show current status |
+| `/memory` | View and search persistent memories |
+| `/forget` | Delete a memory or all memories |
+| `/remember` | Manually add a memory |
 | `/help` | Show all commands |
-| `/quit` | Exit application |
+| `/quit` | Exit Klix code |
 
 ### Available Tools
 
@@ -117,12 +120,14 @@ The agent has access to these tools:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `GOOGLE_API_KEY` | Google AI Studio API key | (required for Gemini) |
+| `MEM0_API_KEY` | Mem0 API key for persistent memory | (optional) |
+| `MEMORY_ENABLED` | Enable persistent memory | `true` |
 | `OLLAMA_HOST` | Ollama server URL | `http://localhost:11434` |
-| `DEFAULT_MODEL` | Default model to use | `gemini-1.5-pro` |
-| `GEMINI_MODEL` | Specific Gemini model | `gemini-1.5-pro` |
-| `OLLAMA_MODEL` | Specific Ollama model | `llama3` |
-| `USER_NAME` | Display name in header | `Developer` |
-| `ORG_NAME` | Organization name | `Dev Org` |
+| `DEFAULT_MODEL` | Default model to use | `gemini-1.5-flash` |
+| `GEMINI_MODEL` | Specific Gemini model | `gemini-1.5-flash` |
+| `OLLAMA_MODEL` | Specific Ollama model | `qwen2.5-coder` |
+| `USER_NAME` | Display name in header | `Karan` |
+| `ORG_NAME` | Organization name | `NeuroKaran's Org` |
 
 ### Gemini Safety Settings
 
@@ -132,6 +137,7 @@ By default, all safety settings are set to `BLOCK_NONE` for maximum developer fr
 
 - Python 3.10+
 - Google AI Studio API key (for Gemini)
+- Mem0 API key (for persistent memory)
 - Ollama installed locally (for local mode)
 
 ## License

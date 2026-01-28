@@ -1,5 +1,5 @@
 """
-Gemini Code - TUI Interface
+Klix code - TUI Interface
 Sophisticated terminal UI using the rich library, matching the "Claude Code" look exactly.
 """
 
@@ -70,7 +70,7 @@ class TUIState:
 
 class GeminiCodeTUI:
     """
-    Main TUI class for Gemini Code.
+    Main TUI class for Klix code.
     Matches the Claude Code interface exactly.
     """
     
@@ -236,7 +236,7 @@ class GeminiCodeTUI:
             notice_text = Text(notice, style=self.styles["accent"])
         else:
             notice_text = Text(
-                "Gemini Code is ready. Run '/help' for commands or '/init' to set up your project.",
+                "Klix code is ready. Run '/help' for commands or '/init' to set up your project.",
                 style=self.styles["accent"]
             )
         
@@ -295,7 +295,7 @@ class GeminiCodeTUI:
         elif role == "assistant":
             border_color = theme.accent_color
             icon = "🤖"
-            default_title = "Gemini Code"
+            default_title = "Klix code"
         elif role == "tool":
             border_color = theme.success_color
             icon = "🔧"
@@ -442,7 +442,7 @@ class GeminiCodeTUI:
                 panel = Panel(
                     md,
                     border_style=theme.accent_color,
-                    title="🤖 Gemini Code",
+                    title="🤖 Klix code",
                     title_align="left",
                     padding=(1, 2),
                 )

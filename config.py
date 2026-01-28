@@ -1,5 +1,5 @@
 """
-Gemini Code - Configuration Management
+Klix code - Configuration Management
 Handles API keys, model selection, and theme configuration.
 """
 
