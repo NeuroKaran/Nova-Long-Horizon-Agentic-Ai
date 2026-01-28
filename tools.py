@@ -21,6 +21,9 @@ except ImportError:
     DDGS_AVAILABLE = False
 
 from config import get_config
+from logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 # Type variable for tool functions
@@ -124,13 +127,18 @@ class ToolRegistry:
     
     def execute(self, name: str, **kwargs: Any) -> str:
         """Execute a tool by name."""
+        logger.debug(f"Executing tool: {name} with args: {list(kwargs.keys())}")
         tool = self.get(name)
         if tool is None:
+            logger.warning(f"Tool not found: {name}")
             return f"Error: Tool '{name}' not found."
         
         try:
-            return tool.execute(**kwargs)
+            result = tool.execute(**kwargs)
+            logger.debug(f"Tool {name} completed successfully")
+            return result
         except Exception as e:
+            logger.error(f"Tool '{name}' execution failed: {e}")
             return f"Error executing '{name}': {str(e)}"
     
     def list_tools(self) -> list[Tool]:

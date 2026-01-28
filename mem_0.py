@@ -14,6 +14,9 @@ from typing import Any
 from mem0 import MemoryClient
 
 from config import Config, get_config
+from logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class MemoryType(Enum):
@@ -119,7 +122,7 @@ class MemoryService:
             return memories
             
         except Exception as e:
-            print(f"[Memory] Search error: {e}")
+            logger.error(f"Memory search failed: {e}")
             return []
     
     def get_all(
@@ -155,7 +158,7 @@ class MemoryService:
             return memories
             
         except Exception as e:
-            print(f"[Memory] Get all error: {e}")
+            logger.error(f"Memory get_all failed: {e}")
             return []
     
     def add(
@@ -196,7 +199,7 @@ class MemoryService:
             return True
             
         except Exception as e:
-            print(f"[Memory] Add error: {e}")
+            logger.error(f"Memory add failed: {e}")
             return False
     
     def add_text(
@@ -234,7 +237,7 @@ class MemoryService:
             return True
             
         except Exception as e:
-            print(f"[Memory] Add text error: {e}")
+            logger.error(f"Memory add_text failed: {e}")
             return False
     
     def delete(self, memory_id: str) -> bool:
@@ -254,7 +257,7 @@ class MemoryService:
             self._client.delete(memory_id=memory_id)
             return True
         except Exception as e:
-            print(f"[Memory] Delete error: {e}")
+            logger.error(f"Memory delete failed: {e}")
             return False
     
     def delete_all(self, user_id: str | None = None) -> bool:
@@ -276,7 +279,7 @@ class MemoryService:
             self._client.delete_all(user_id=user_id)
             return True
         except Exception as e:
-            print(f"[Memory] Delete all error: {e}")
+            logger.error(f"Memory delete_all failed: {e}")
             return False
     
     # =========================================================================

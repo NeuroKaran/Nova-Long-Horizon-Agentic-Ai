@@ -15,9 +15,12 @@ import typer
 
 from config import Config, ModelProvider, get_config, reload_config
 from llm_client import LLMClient, LLMResponse, Message, get_client
+from logging_config import setup_logging, get_logger
 from mem_0 import MemoryService, get_memory_service
 from tools import execute_tool_call, get_tool_descriptions, registry
 from tui import GeminiCodeTUI, create_tui
+
+logger = get_logger(__name__)
 
 
 # ============================================================================
@@ -737,9 +740,11 @@ def main(
     try:
         asyncio.run(agent.run())
     except KeyboardInterrupt:
-        print("\nGoodbye! 👋")
+        logger.info("Shutdown requested by user")
         sys.exit(0)
 
 
 if __name__ == "__main__":
+    setup_logging()
+    logger.info("Starting Klix")
     app()

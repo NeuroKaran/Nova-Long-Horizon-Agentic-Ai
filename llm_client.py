@@ -15,6 +15,9 @@ from google.genai import types
 import ollama
 
 from config import Config, ModelProvider, get_config
+from logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -192,6 +195,7 @@ class GeminiClient(LLMClient):
         stream: bool = False,
     ) -> LLMResponse | AsyncGenerator[str, None]:
         """Send chat messages to Gemini."""
+        logger.debug(f"Gemini chat: {len(messages)} messages, tools={bool(tools)}, stream={stream}")
         
         # Extract system instruction from messages (includes memory context)
         system_content = self.system_instruction
@@ -214,14 +218,18 @@ class GeminiClient(LLMClient):
             return self._stream_response(gemini_messages, generate_config)
         
         # Non-streaming response
-        response = await asyncio.to_thread(
-            self.client.models.generate_content,
-            model=self.model_name,
-            contents=gemini_messages,
-            config=generate_config,
-        )
-        
-        return self._parse_response(response)
+        try:
+            response = await asyncio.to_thread(
+                self.client.models.generate_content,
+                model=self.model_name,
+                contents=gemini_messages,
+                config=generate_config,
+            )
+            logger.debug(f"Gemini response received, parsing...")
+            return self._parse_response(response)
+        except Exception as e:
+            logger.error(f"Gemini API call failed: {e}")
+            raise
     
     async def _stream_response(
         self,
