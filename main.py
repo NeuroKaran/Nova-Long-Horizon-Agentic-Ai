@@ -489,6 +489,15 @@ class AgentLoop:
             content=system_content,
         )
         self.memory.add_message(system_msg)
+
+    async def cleanup(self) -> None:
+        """Clean up resources before shutdown."""
+        logger.info("Cleaning up resources...")
+        if self.client:
+            await self.client.close()
+        if self.memory_service:
+            await self.memory_service.close()
+        logger.debug("Cleanup complete")
     
     async def _process_tool_calls(self, tool_calls: list[dict[str, Any]]) -> list[Message]:
         """
@@ -741,6 +750,9 @@ def main(
         asyncio.run(agent.run())
     except KeyboardInterrupt:
         logger.info("Shutdown requested by user")
+    finally:
+        # Ensure cleanup is called
+        asyncio.run(agent.cleanup())
         sys.exit(0)
 
 

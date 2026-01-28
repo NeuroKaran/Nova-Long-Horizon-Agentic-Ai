@@ -81,6 +81,11 @@ class MemoryService:
         """Build filters dict for mem0 API calls."""
         return {"user_id": user_id}
     
+    async def close(self) -> None:
+        """Close the memory service."""
+        logger.debug("Closing memory service")
+        pass
+    
     # =========================================================================
     # Core Memory Operations
     # =========================================================================

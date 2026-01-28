@@ -86,6 +86,11 @@ class LLMClient(ABC):
         pass
     
     @abstractmethod
+    async def close(self) -> None:
+        """Close any open connections or clients."""
+        pass
+    
+    @abstractmethod
     async def generate(self, prompt: str) -> str:
         """Generate a simple text response."""
         pass
@@ -230,6 +235,13 @@ class GeminiClient(LLMClient):
         except Exception as e:
             logger.error(f"Gemini API call failed: {e}")
             raise
+
+    async def close(self) -> None:
+        """Close the Gemini client."""
+        # The genai client doesn't have an explicit close in the current version,
+        # but we provide the interface for future-proofing.
+        logger.debug("Closing Gemini client")
+        pass
     
     async def _stream_response(
         self,
@@ -375,6 +387,11 @@ class OllamaClient(LLMClient):
         )
         
         return self._parse_response(response)
+
+    async def close(self) -> None:
+        """Close the Ollama client."""
+        logger.debug("Closing Ollama client")
+        pass
     
     async def _stream_response(
         self,
