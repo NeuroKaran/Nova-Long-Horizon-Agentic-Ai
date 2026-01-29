@@ -122,6 +122,10 @@ class Config:
     memory_search_limit: int = 10
     memory_auto_extract: bool = True  # Auto-extract memories from conversations
     
+    # Reasoning Traces Configuration
+    enable_traces: bool = field(default_factory=lambda: os.getenv("ENABLE_TRACES", "true").lower() == "true")
+    traces_dir: Path = field(default_factory=lambda: Path(os.getenv("TRACES_DIR", "traces")))
+    
     def __post_init__(self) -> None:
         """Validate configuration after initialization."""
         # Parse default model from environment
@@ -177,6 +181,8 @@ class Config:
             "user": self.user_name,
             "org": self.org_name,
             "project_root": str(self.project_root),
+            "enable_traces": self.enable_traces,
+            "traces_dir": str(self.traces_dir),
         }
 
 

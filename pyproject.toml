@@ -26,7 +26,7 @@ Klix = "main:run_cli"
 
 [tool.setuptools]
 packages = ["utils"]
-py-modules = ["main", "config", "exceptions", "llm_client", "logging_config", "tools", "tui", "mem_0"]
+py-modules = ["main", "config", "exceptions", "llm_client", "logging_config", "tools", "tui", "mem_0", "reasoning_logger"]
 
 [tool.setuptools.package-data]
 "*" = ["*.py", "*.txt", "*.md", ".env.example"]

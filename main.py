@@ -17,6 +17,7 @@ from config import Config, ModelProvider, get_config, reload_config
 from llm_client import LLMClient, LLMResponse, Message, get_client
 from logging_config import setup_logging, get_logger
 from mem_0 import MemoryService, get_memory_service
+from reasoning_logger import get_reasoning_logger
 from tools import execute_tool_call, get_tool_descriptions, registry
 from tui import GeminiCodeTUI, create_tui
 
@@ -460,6 +461,13 @@ class AgentLoop:
         # Initialize persistent memory service (mem0)
         self.memory_service = get_memory_service(config=self.config)
         
+        # Initialize reasoning traces logger
+        self.reasoning_logger = get_reasoning_logger(config=self.config)
+        self.reasoning_logger.start_session(metadata={
+            "user": self.config.user_name,
+            "project": str(self.config.project_root)
+        })
+        
         # State
         self.running = False
         self._thinking_task: asyncio.Task | None = None
@@ -530,6 +538,13 @@ class AgentLoop:
                 name=tool_name,
             ))
             
+            # Log tool result
+            self.reasoning_logger.log_tool_result(
+                tool_name=tool_name,
+                arguments=arguments,
+                result=result
+            )
+            
             # Track activity
             self.tui.state.add_activity(f"Used {tool_name}")
         
@@ -540,6 +555,9 @@ class AgentLoop:
         # Add user message
         user_msg = Message(role="user", content=user_input)
         self.memory.add_message(user_msg)
+        
+        # Log user message to traces
+        self.reasoning_logger.log_user_message(user_input)
         
         # Get tools for LLM
         tools = registry.get_tools_for_llm()
@@ -561,6 +579,13 @@ class AgentLoop:
             # Stop thinking
             self.tui.stop_thinking()
             await asyncio.sleep(0.1)  # Let the spinner stop
+            
+            # Log initial response
+            self.reasoning_logger.log_llm_response(
+                content=response.content,
+                tool_calls=response.tool_calls,
+                usage=response.usage
+            )
             
             # Update token usage
             if response.usage:
@@ -598,6 +623,13 @@ class AgentLoop:
                 
                 self.tui.stop_thinking()
                 await asyncio.sleep(0.1)
+                
+                # Log follow-up response
+                self.reasoning_logger.log_llm_response(
+                    content=follow_up.content,
+                    tool_calls=follow_up.tool_calls,
+                    usage=follow_up.usage
+                )
                 
                 # Render final response
                 if follow_up.content:
