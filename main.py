@@ -756,7 +756,11 @@ def main(
         sys.exit(0)
 
 
-if __name__ == "__main__":
+def run_cli() -> None:
+    """Entry point for the 'Klix' command."""
     setup_logging()
-    logger.info("Starting Klix")
     app()
+
+
+if __name__ == "__main__":
+    run_cli()

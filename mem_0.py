@@ -114,6 +114,7 @@ class MemoryService:
         filters = self._get_filters(user_id)
         
         try:
+            # mem0 v2 API requires both user_id and filters params
             result = self._client.search(
                 query=query,
                 user_id=user_id,
@@ -152,6 +153,7 @@ class MemoryService:
         filters = self._get_filters(user_id)
         
         try:
+            # mem0 v2 API requires both user_id and filters params
             result = self._client.get_all(
                 user_id=user_id,
                 filters=filters,

@@ -695,6 +695,306 @@ def get_project_structure(max_depth: int = 3, include_hidden: bool = False) -> s
 
 
 # ============================================================================
+# OSINT Tools - Reconnaissance and Enumeration
+# ============================================================================
+
+# Try to import OSINT dependencies
+try:
+    import dns.resolver
+    DNS_AVAILABLE = True
+except ImportError:
+    DNS_AVAILABLE = False
+
+try:
+    import whois
+    WHOIS_AVAILABLE = True
+except ImportError:
+    WHOIS_AVAILABLE = False
+
+try:
+    import requests as http_requests
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
+
+import socket
+
+
+@tool(
+    "dns_lookup",
+    "Perform DNS lookup for a domain. Returns DNS records of the specified type.",
+    [
+        ToolParameter(
+            name="domain",
+            type="string",
+            description="The domain name to look up (e.g., example.com).",
+            required=True,
+        ),
+        ToolParameter(
+            name="record_type",
+            type="string",
+            description="DNS record type: A, AAAA, MX, NS, TXT, CNAME, SOA. Defaults to A.",
+            required=False,
+            default="A",
+        ),
+    ],
+)
+def dns_lookup(domain: str, record_type: str = "A") -> str:
+    """Perform DNS lookup for a domain."""
+    if not DNS_AVAILABLE:
+        return (
+            "Error: DNS lookup is not available. "
+            "Install dnspython: pip install dnspython"
+        )
+    
+    try:
+        record_type = record_type.upper()
+        valid_types = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA", "PTR"]
+        
+        if record_type not in valid_types:
+            return f"Error: Invalid record type '{record_type}'. Valid types: {', '.join(valid_types)}"
+        
+        resolver = dns.resolver.Resolver()
+        resolver.timeout = 10
+        resolver.lifetime = 10
+        
+        answers = resolver.resolve(domain, record_type)
+        
+        results = [f"DNS {record_type} records for {domain}:\n"]
+        
+        for rdata in answers:
+            if record_type == "MX":
+                results.append(f"  • Priority {rdata.preference}: {rdata.exchange}")
+            elif record_type == "SOA":
+                results.append(f"  • Primary NS: {rdata.mname}")
+                results.append(f"  • Email: {rdata.rname}")
+                results.append(f"  • Serial: {rdata.serial}")
+            else:
+                results.append(f"  • {rdata.to_text()}")
+        
+        return "\n".join(results)
+    
+    except dns.resolver.NXDOMAIN:
+        return f"Error: Domain '{domain}' does not exist."
+    except dns.resolver.NoAnswer:
+        return f"No {record_type} records found for '{domain}'."
+    except dns.resolver.Timeout:
+        return f"Error: DNS query timed out for '{domain}'."
+    except Exception as e:
+        return f"Error performing DNS lookup: {str(e)}"
+
+
+@tool(
+    "whois_lookup",
+    "Perform WHOIS lookup for a domain. Returns domain registration information.",
+    [
+        ToolParameter(
+            name="domain",
+            type="string",
+            description="The domain name to look up (e.g., example.com).",
+            required=True,
+        ),
+    ],
+)
+def whois_lookup(domain: str) -> str:
+    """Perform WHOIS lookup for a domain."""
+    if not WHOIS_AVAILABLE:
+        return (
+            "Error: WHOIS lookup is not available. "
+            "Install python-whois: pip install python-whois"
+        )
+    
+    try:
+        w = whois.whois(domain)
+        
+        if not w or not w.domain_name:
+            return f"No WHOIS data found for '{domain}'."
+        
+        results = [f"WHOIS information for {domain}:\n"]
+        
+        # Helper to format lists/strings
+        def fmt(val):
+            if isinstance(val, list):
+                return ", ".join(str(v) for v in val[:5])  # Limit to 5 items
+            return str(val) if val else "N/A"
+        
+        results.append(f"  **Domain:** {fmt(w.domain_name)}")
+        results.append(f"  **Registrar:** {fmt(w.registrar)}")
+        results.append(f"  **Creation Date:** {fmt(w.creation_date)}")
+        results.append(f"  **Expiration Date:** {fmt(w.expiration_date)}")
+        results.append(f"  **Updated Date:** {fmt(w.updated_date)}")
+        results.append(f"  **Name Servers:** {fmt(w.name_servers)}")
+        results.append(f"  **Status:** {fmt(w.status)}")
+        
+        if w.org:
+            results.append(f"  **Organization:** {fmt(w.org)}")
+        if w.country:
+            results.append(f"  **Country:** {fmt(w.country)}")
+        
+        return "\n".join(results)
+    
+    except Exception as e:
+        return f"Error performing WHOIS lookup: {str(e)}"
+
+
+@tool(
+    "port_scan",
+    "Scan common ports on a target host. Use only on authorized targets.",
+    [
+        ToolParameter(
+            name="target",
+            type="string",
+            description="The target hostname or IP address to scan.",
+            required=True,
+        ),
+        ToolParameter(
+            name="ports",
+            type="string",
+            description="Comma-separated list of ports to scan (e.g., '22,80,443'). Defaults to common ports.",
+            required=False,
+            default="",
+        ),
+        ToolParameter(
+            name="timeout",
+            type="integer",
+            description="Connection timeout in seconds per port. Defaults to 2.",
+            required=False,
+            default=2,
+        ),
+    ],
+)
+def port_scan(target: str, ports: str = "", timeout: int = 2) -> str:
+    """Scan ports on a target host."""
+    try:
+        # Default common ports if none specified
+        if not ports:
+            port_list = [21, 22, 23, 25, 53, 80, 110, 143, 443, 445, 993, 995, 3306, 3389, 5432, 8080, 8443]
+        else:
+            try:
+                port_list = [int(p.strip()) for p in ports.split(",") if p.strip()]
+            except ValueError:
+                return "Error: Invalid port format. Use comma-separated numbers (e.g., '22,80,443')."
+        
+        # Limit number of ports to prevent abuse
+        if len(port_list) > 50:
+            return "Error: Maximum 50 ports can be scanned at once."
+        
+        # Resolve hostname
+        try:
+            ip = socket.gethostbyname(target)
+        except socket.gaierror:
+            return f"Error: Cannot resolve hostname '{target}'."
+        
+        results = [f"Port scan results for {target} ({ip}):\n"]
+        open_ports = []
+        closed_ports = []
+        
+        for port in port_list:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(timeout)
+                result = sock.connect_ex((ip, port))
+                sock.close()
+                
+                if result == 0:
+                    # Try to get service name
+                    try:
+                        service = socket.getservbyport(port)
+                    except OSError:
+                        service = "unknown"
+                    open_ports.append(f"  ✅ Port {port} ({service}): OPEN")
+                else:
+                    closed_ports.append(port)
+            except Exception:
+                closed_ports.append(port)
+        
+        if open_ports:
+            results.append("**Open Ports:**")
+            results.extend(open_ports)
+        else:
+            results.append("No open ports found.")
+        
+        if closed_ports:
+            results.append(f"\n**Closed/Filtered:** {len(closed_ports)} ports")
+        
+        return "\n".join(results)
+    
+    except Exception as e:
+        return f"Error performing port scan: {str(e)}"
+
+
+@tool(
+    "http_headers",
+    "Fetch HTTP response headers from a URL. Useful for server fingerprinting and security analysis.",
+    [
+        ToolParameter(
+            name="url",
+            type="string",
+            description="The URL to fetch headers from (e.g., https://example.com).",
+            required=True,
+        ),
+        ToolParameter(
+            name="follow_redirects",
+            type="boolean",
+            description="Whether to follow redirects. Defaults to True.",
+            required=False,
+            default=True,
+        ),
+    ],
+)
+def http_headers(url: str, follow_redirects: bool = True) -> str:
+    """Fetch HTTP headers from a URL."""
+    if not REQUESTS_AVAILABLE:
+        return (
+            "Error: HTTP headers tool is not available. "
+            "Install requests: pip install requests"
+        )
+    
+    try:
+        # Ensure URL has a scheme
+        if not url.startswith(("http://", "https://")):
+            url = "https://" + url
+        
+        response = http_requests.head(
+            url,
+            allow_redirects=follow_redirects,
+            timeout=10,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; OSINT-Tool/1.0)"}
+        )
+        
+        results = [f"HTTP Headers for {url}:\n"]
+        results.append(f"  **Status:** {response.status_code} {response.reason}")
+        results.append(f"  **Final URL:** {response.url}\n")
+        
+        # Security-relevant headers to highlight
+        security_headers = [
+            "Server", "X-Powered-By", "X-Frame-Options", "X-XSS-Protection",
+            "X-Content-Type-Options", "Strict-Transport-Security",
+            "Content-Security-Policy", "Access-Control-Allow-Origin"
+        ]
+        
+        results.append("**Headers:**")
+        for header, value in response.headers.items():
+            # Truncate long values
+            display_value = value[:100] + "..." if len(value) > 100 else value
+            if header in security_headers:
+                results.append(f"  🔒 **{header}:** {display_value}")
+            else:
+                results.append(f"  • {header}: {display_value}")
+        
+        return "\n".join(results)
+    
+    except http_requests.exceptions.SSLError:
+        return f"Error: SSL certificate verification failed for '{url}'."
+    except http_requests.exceptions.ConnectionError:
+        return f"Error: Cannot connect to '{url}'."
+    except http_requests.exceptions.Timeout:
+        return f"Error: Request timed out for '{url}'."
+    except Exception as e:
+        return f"Error fetching HTTP headers: {str(e)}"
+
+
+# ============================================================================
 # Utility Functions
 # ============================================================================
 
@@ -757,4 +1057,9 @@ __all__ = [
     "get_project_structure",
     "get_tool_descriptions",
     "execute_tool_call",
+    # OSINT Tools
+    "dns_lookup",
+    "whois_lookup",
+    "port_scan",
+    "http_headers",
 ]
